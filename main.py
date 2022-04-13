@@ -1,6 +1,6 @@
 import struct
 from PyQt5 import QtWidgets
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import QTimer
 import matplotlib.figure
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 import sys
@@ -12,6 +12,8 @@ from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 import matplotlib.image as image
 import os
 from moves import *
+import time
+
 
 moves = carlton
 img = image.imread('turtlelol.png')
@@ -23,6 +25,9 @@ y = np.arange(0, yp, 1)
 class MainWindow(QtWidgets.QWidget):
     def __init__(self):
         super(MainWindow, self).__init__()
+
+        self.global_min = 0
+        self.global_max = 0
 
         self.pose_index = 0
         self.point_index = 0
@@ -37,28 +42,29 @@ class MainWindow(QtWidgets.QWidget):
         self.body_data = ()
         self.body_data_copy = ()
 
-        self.setFixedSize(600, 632)
-        self.setWindowTitle('Dancing Turtle')
+        self.setFixedSize(600, 600)
+        self.setWindowTitle("IT'S OVER")
         self.center()
 
-        main_layout = QtWidgets.QVBoxLayout()
+        main_layout = QtWidgets.QHBoxLayout()
         layout_left = QtWidgets.QVBoxLayout()
 
         self.figure = matplotlib.figure.Figure()  # Plot
         self.canvas = FigureCanvas(self.figure)
         self.axes = Axes3D(self.figure)
 
-        self.expression_slider = QtWidgets.QSlider(Qt.Horizontal)
+        '''self.expression_slider = QtWidgets.QSlider(Qt.Horizontal)
         self.expression_slider.valueChanged.connect(self.expression_slider_change)
         self.expression_slider.setValue(0)
         self.expression_slider.setTickPosition(QtWidgets.QSlider.TicksBelow)
         self.expression_slider.setTickInterval(2)
-        self.expression_slider.setEnabled(False)
+        self.expression_slider.setEnabled(False)'''
 
-        layout_left.addWidget(self.canvas)
-        layout_left.addWidget(self.expression_slider)
+        #layout_left.addWidget(self.canvas)
+        #layout_left.addWidget(self.expression_slider)
 
-        main_layout.addLayout(layout_left)
+        #main_layout.addLayout(layout_left)
+        main_layout.addWidget(self.canvas)
         self.setLayout(main_layout)
 
         self.axes.view_init(20, 60)
@@ -66,11 +72,20 @@ class MainWindow(QtWidgets.QWidget):
         self.load_pose()
         self.plot_3d()
 
-    def expression_slider_change(self):
-        self.pose_index = self.expression_slider.value()
-        self.setWindowTitle('Dancing Turtle')
-        self.load_pose()
-        self.plot_3d()
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.showTime)
+        self.timer.start(50)
+        self.showTime()
+
+    def showTime(self):
+        self.pose_index += 1
+        if self.pose_index <= self.global_max:
+            self.load_pose()
+            self.plot_3d()
+        else:
+            self.pose_index = self.global_min
+            self.load_pose()
+            self.plot_3d()
 
     def load_data(self):
 
@@ -120,10 +135,13 @@ class MainWindow(QtWidgets.QWidget):
             self.body_data = (copy.copy(points_x), copy.copy(points_y), copy.copy(points_z))
             self.body_data_copy = copy.deepcopy(self.body_data)
 
-            self.expression_slider.setMinimum(0)
+            self.global_min = 0
+            self.global_max = int(len(self.body_data[0]) / 23) - 1
+
+            '''self.expression_slider.setMinimum(0)
             self.expression_slider.setMaximum(int(len(self.body_data[0]) / 23) - 1)
             self.expression_slider.setValue(0)
-            self.expression_slider.setEnabled(True)
+            self.expression_slider.setEnabled(True)'''
 
     def load_pose(self):
 
